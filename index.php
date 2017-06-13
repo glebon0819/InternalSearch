@@ -10,7 +10,7 @@
 		include 'functions.php';
 		
 		// includes the database class that we can use to connect to the local MySQL DB
-		include('..' . DIRECTORY_SEPARATOR . 'database.php');
+		include('database.php');
 		
 		$paths = scan_directory('..' . DIRECTORY_SEPARATOR . 'internal_search' . DIRECTORY_SEPARATOR . 'pages');
 		
