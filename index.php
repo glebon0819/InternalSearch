@@ -7,11 +7,19 @@
 
 <body>
 	<?php 
-		include 'scanner.php';
+		include 'functions.php';
 		
-		$directory = scan_directory('.\pages');
+		// includes the database class that we can use to connect to the local MySQL DB
+		include('..' . DIRECTORY_SEPARATOR . 'database.php');
 		
-		echo $directory;
+		$paths = scan_directory('..' . DIRECTORY_SEPARATOR . 'internal_search' . DIRECTORY_SEPARATOR . 'pages');
+		
+		$content = scrape_files($paths);
+		
+		$message = load_content($content);
+		
+		echo $message;
+		
 	?>
 </body>
 </html>
