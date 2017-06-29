@@ -1,54 +1,45 @@
-# internal_search
+# Internal Search Package/Library
 ## Description:
-This is the code for an internal web scraping tool that scrapes HTML content off of all pages within its directory and all subdirectories and dumps all of that content into a database to create an index for an internal search engine so users can search for web pages within your site. This script would have to be run periodically to keep the content fresh. You could either do that manually or schedule it to run automatically every so often.
+This is the code for an internal web scraping package that provides tools for scraping HTML content off of pages within its directory and all subdirectories and dumps all of that content into a database to create an index for an internal search engine so users can search for pages within your site. This script would have to be run periodically to keep the content fresh, but that is not directly addressed by this package. You could either do that manually or schedule it to run automatically every so often.
 
 ## Scheme:
+(This is a summary and does not directly represent the library or its functions)
 ```php
-function compiles_a_list_of_all_the_files_in_current_directory_and_all_subdirectories ($path_to_root_directory) {
-  $array = scan_directory($path)
-  foreach ($item in the $array) {
-		if (is_a_directory($item)) {
-			// add $item to the end of $path and recursively call the function with the new path as the input
-		}
-		else {
-			// add $item to a final array of files and their paths
+// first, you scan a folder, such as the root directory of your website, to create a list of paths to each file
+function scan_directory ($path_to_folder_you_want_to_scan) {
+	// scans folder to create a list of files within that folder
+	// if it finds a folder, it recursively scans that folder and adds the result to the final array of paths
+	return $array_of_paths_to_files
+}
+
+// then you use that list to tell the scraper which files to scrape
+function scrapes_all_files ($array_of_paths_to_files) {
+	foreach ($file in the $array_of_paths_to_files) {
+		// scrape file for specific content
+	}
+	return $array_of_scraped_content
+}
+
+// lastly, you load the content and the paths into an index (a database table) 
+function load_content ($array_of_paths_to_files, $array_of_scraped_content) {
+	if (database_connect(credentials)) {
+		if (array_length($array_of_scraped_content) == array_length($array_of_paths_to_files)) {
+			foreach ($item in $array_of_paths_to_files) {
+				// insert $array_of_paths_to_files and $array_of_scraped_content into DB as separate columns in the same row
+			}
+			return "Site indexed successfully.";
 		}
 	}
-	return $final_list
-}
-
-function scrapes_all_files_from_above_list ($array_of_paths_to_files) {
-  foreach ($file in the $array) {
-    $url = 'http://www.example.com/folder/' . $file
-    // use curl to retreive the file from $url
-    // use DOMDocument and DOMXPath to scrape only the content you want off of the file
-    // add the content to an array of scraped content
-  }
-  return $array_of_scraped_content
-}
-
-function to take the scraped content and load them into a local database ($final_list, $array_of_scraped_content) {
-  if (database_connect(credentials)) {
-    if (array_length($array_of_scraped_content) == array_length($final_list)) {
-      foreach ($item in $final_list) {
-        // insert $final_list and $array_of_scraped_content into DB as separate columns in the same row
-      }
-      return "Site indexed successfully.";
-    }
-  }
-  else {
-    return "Connection failed.";
-  }
+	else {
+		return "Connection failed.";
+	}
 }
 ```
 
-### Implementation
+## Implementation:
 ```php
-$list = scan('./path/to/root/')
-
-$content = scrape($list)
-
-$result = index($content)
-
-echo $result;
+$list = scan_directory('../path/to/root/')
+$content = scrapes_all_files($list)
+$message = load_content($content)
+echo $message;
 ```
