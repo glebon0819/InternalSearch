@@ -1,5 +1,5 @@
 # Internal Search Package/Library
-# !! Attention !! This is currently under development. You are welcome to take the code and use it but it is not finished. Check back in soon and it will probably be done.
+## !! Attention !! This is currently under development. You are welcome to take the code and use it but it is not finished. Check back in soon and it will probably be done.
 ## Description:
 This is the code for an internal web scraping package that provides tools for scraping HTML content off of pages within its directory and all subdirectories and dumps all of that content into a database to create an index for an internal search engine so users can search for pages within your site. This script would have to be run periodically to keep the content fresh, but that is not directly addressed by this package. You could either do that manually or schedule it to run automatically every so often.
 
