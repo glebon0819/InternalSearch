@@ -12,7 +12,7 @@
 		// includes the database class that we can use to connect to the local MySQL DB
 		include('database.php');
 		
-		$paths = scan_directory('.' . DIRECTORY_SEPARATOR . 'pages');
+		$paths = scan_directory('..' . DIRECTORY_SEPARATOR . 'internal_search' . DIRECTORY_SEPARATOR . 'pages');
 		
 		$content = scrape_files($paths);
 		
