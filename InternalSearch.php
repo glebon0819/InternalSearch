@@ -30,7 +30,6 @@ class InternalSearch {
 		return $paths_to_files;
 	}
 
-
 	public static function scrape_files($list) {
 	
 		$content_array = array();
@@ -74,19 +73,10 @@ class InternalSearch {
 		
 		return array($used_paths_array, $content_array);
 	}
-	public static function load_content(array $arrays) {
+	
+	public static function load_content(array $arrays, array $credentials) {
 		// sets the default message type to an error, that way we can just add onto this later if needed
 		$message = 'Error: ';
-		
-		/*
-		try {
-			// checking if input arrays have the same lengths
-			check_lengths($content , $paths);
-		} catch(Exception $e) {
-			return $message . 'Inputs failed to meet standards. Message: ' . $e->getMessage();
-		}
-		*/
-		
 		
 		// this prepares the SQL statement for the incoming data
 		try {
@@ -104,24 +94,28 @@ class InternalSearch {
 		
 		try {
 			// tries to connect to DB using Database class that was included earlier
-			$pdo = Database::connect();
+			// $pdo = Database::connect();
+			$pdo = new PDO($credentials['type'] . ':host=' . $credentials['host'] . ';dbname=' . $credentials['database'], $credentials['username'], $credentials['password']);
+			
 		} catch(PDOException $d) {
 			return $message . 'Database failed to connect. Message: ' . $d->getMessage();
+		} catch(Exception $e) {
+			return $message . $e->getMessage();
 		}
 		try {
 			// push data into DB
 			$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-			$sql = 'INSERT INTO search_index (path, content) VALUES ' . $final_sql;
+			$sql = 'INSERT INTO ' . $credentials['table'] . '(' . implode(',', $credentials['columns']) . ') VALUES ' . $final_sql;
 			$q = $pdo->prepare($sql);
 			$q->execute($final_data);
 		} catch(PDOException $e) {
 			Database::disconnect();
+			// $connection = NULL;
 			return $message . 'Database failed to load data.' . $e->getMessage();
-		} /*catch(Exception $e) {
-			Database::disconnect();
-			return $message . 'Database failed to load data.' . $e->getMessage();
-		}*/
-		Database::disconnect();
+		}
+		// Database::disconnect();
+		$pdo = NULL;
+		
 		$message = 'Success! Database submitted successfully!';
 		
 		return $message;
