@@ -7,19 +7,15 @@
 
 <body>
 	<?php 
-		include 'functions.php';
+		include 'InternalSearch.php';
+		include 'database.php';
 		
-		// includes the database class that we can use to connect to the local MySQL DB
-		include('database.php');
-		
-		$paths = scan_directory('.' . DIRECTORY_SEPARATOR . 'pages');
-		
-		$content = scrape_files($paths);
-		
-		$message = load_content($content);
-		
-		echo $message;
-		
+		$list = InternalSearch::scan_directory('.\\pages');
+		$content = InternalSearch::scrape_files($list);
+		$message = InternalSearch::load_content($content);
+		var_dump($list);
+		var_dump($content);
+		var_dump($message);
 	?>
 </body>
 </html>
