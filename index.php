@@ -8,7 +8,6 @@
 <body>
 	<?php 
 		include 'InternalSearch.php';
-		include 'database.php';
 		
 		$db_credentials = array(
 			'type' => 'mysql',

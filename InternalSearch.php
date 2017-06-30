@@ -30,10 +30,12 @@ class InternalSearch {
 		return $paths_to_files;
 	}
 
-	public static function scrape_files($list) {
+	public static function scrape_files($list, array $queries) {
 	
 		$content_array = array();
 		$used_paths_array = array();
+		
+		$result = array();
 		
 		foreach ($list as $file) {
 			
@@ -48,30 +50,67 @@ class InternalSearch {
 			
 			$xpath = new DOMXPath($dom);
 			
-			// scrapes the contents of the description area in each file
-			$nodes = $xpath->query("//p[@class='description']");
+			$final_array = array();
 			
-			$descriptions = array();
-			
-			// creates an array of the resulting descriptions (there should only be one)
-			foreach ($nodes as $i => $node) {
-				$descriptions[] = $node->nodeValue;
-			}
-			
-			// loads each description into the array of content
-			foreach ($descriptions as $description) {
-				$content_array[] = $description;
+			foreach($queries as $query){
+				
+				$content_array = array();
+				$contents = array();
+				
+				// scrapes the contents of the description area in each file
+				$nodes = $xpath->query($query);
+				
+				// creates an array of the resulting descriptions (there should only be one)
+				foreach ($nodes as $i => $node) {
+					$contents[] = $node->nodeValue;
+				}
+				
+				if (empty($contents)){
+					$contents[] = NULL;
+				}
+				
+				$contents = implode(' | ', $contents);
+				
+				if(strlen($contents) == 0){
+					$contents = NULL;
+				}
+				
+				$final_array[] = $contents;
 			}
 			
 			// adds the file's path to the array of file paths that actually produced content; this is done to
 			// prevent any mismatch later between the length of the array containing the paths to the files and
 			// the length of the array containing the actual content.
-			if  (count($descriptions) > 0) {
-				$used_paths_array[] = $file;
+			
+			if  (!self::check_if_all_null($final_array)) {
+				array_unshift($final_array, $file);
+				$result[] = $final_array;
 			}
+			
 		} 
 		
-		return array($used_paths_array, $content_array);
+		// return array($used_paths_array, $content_array);
+		return $result;
+	}
+	
+	public static function check_if_all_null(array $array_of_arrays){
+		// return true unless told otherwise
+		$result = true;
+		
+		// foreach element in the array, check if it's an array. If so, call the function recursively. If not, check if its value is null
+		foreach($array_of_arrays as $element){
+			if($result){
+				if(is_array($element)){
+					$result = self::check_if_all_null($element);
+				}
+				else {
+					if(!is_null($element)){
+						$result = false;
+					}
+				}
+			}
+		}
+		return $result;
 	}
 	
 	public static function load_content(array $arrays, array $credentials) {
@@ -96,7 +135,7 @@ class InternalSearch {
 			// tries to connect to DB using Database class that was included earlier
 			// $pdo = Database::connect();
 			$pdo = new PDO($credentials['type'] . ':host=' . $credentials['host'] . ';dbname=' . $credentials['database'], $credentials['username'], $credentials['password']);
-			
+		
 		} catch(PDOException $d) {
 			return $message . 'Database failed to connect. Message: ' . $d->getMessage();
 		} catch(Exception $e) {
@@ -109,11 +148,11 @@ class InternalSearch {
 			$q = $pdo->prepare($sql);
 			$q->execute($final_data);
 		} catch(PDOException $e) {
-			Database::disconnect();
-			// $connection = NULL;
+			// Database::disconnect();
+			$connection = NULL;
 			return $message . 'Database failed to load data.' . $e->getMessage();
 		}
-		// Database::disconnect();
+		
 		$pdo = NULL;
 		
 		$message = 'Success! Database submitted successfully!';
@@ -122,7 +161,7 @@ class InternalSearch {
 	}
 	
 	// input = array( array(memes) , array(are) , array(lit) )
-	public static function check_lengths_new(array $array_of_arrays) {
+	public static function check_lengths(array $array_of_arrays) {
 		$num_of_arrays = count($array_of_arrays); // 3
 		$array_of_counts = array();
 		
@@ -152,7 +191,7 @@ class InternalSearch {
 	// it generates the prepared statements syntax necessary for this job in the format: '(?, ?, ...),(?, ?, ...), ...'
 	public static function prepare_sql(array $content_arrays) { // array($content, $paths) -- 2 items
 		// check lengths of arrays to be sure
-		self::check_lengths_new($content_arrays);
+		self::check_lengths($content_arrays);
 		
 		$number_of_columns = 0;
 		$number_of_rows = 0;
@@ -196,7 +235,7 @@ class InternalSearch {
 	// this function differs from the one in the above in that it is designed to prepare the actual text of the arrays
 	// for loading, rather than the SQL statement
 	public static function prepare_data(array $arrays) {
-		self::check_lengths_new($arrays);
+		self::check_lengths($arrays);
 		
 		$number_of_columns = 0;
 		$number_of_rows = 0;
@@ -216,5 +255,6 @@ class InternalSearch {
 		
 		return $final_data;
 	}
+	
 }
 ?>
