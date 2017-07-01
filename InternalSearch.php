@@ -1,6 +1,6 @@
 <?php
 class InternalSearch {
-	public static function scan_directory($root_dir){
+	public static function scan_directory($root_dir, array $blacklist = NULL){
 		// create an array to hold a list of all the files in this directory and all the files in all of the subdirectories
 		$paths_to_files = array(); 
 		
@@ -18,11 +18,25 @@ class InternalSearch {
 				{
 					// old version (didn't work correctly; I kept this for my own use): 
 					//$result[$value] = scan_directory($path . DIRECTORY_SEPARATOR . $value);
-					$paths_to_files = array_merge($paths_to_files, self::scan_directory($root_dir . DIRECTORY_SEPARATOR . $value));
+					$paths_to_files = array_merge($paths_to_files, self::scan_directory($root_dir . DIRECTORY_SEPARATOR . $value, $blacklist));
 				} 
 				else 
 				{ 
-					$paths_to_files[] = $root_dir . DIRECTORY_SEPARATOR . $value; 
+					$path = $root_dir . DIRECTORY_SEPARATOR . $value;
+					// pits the current path against the blacklist of paths; if a match is found, the path is not added to the output array
+					$match_found = false;
+					if($blacklist != NULL){
+						foreach($blacklist as $blackpath){
+							if($blackpath == $path){
+								$match_found = true;
+							}
+						}
+						if($match_found == false){
+							$paths_to_files[] = $path;
+						}
+					} else {
+						$paths_to_files[] = $path;
+					}
 				}
 			} 
 		}
