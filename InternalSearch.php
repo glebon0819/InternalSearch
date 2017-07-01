@@ -332,9 +332,11 @@ class InternalSearch {
 			}
 			if(array_key_exists('db_creds', $array)){
 				if(is_array($array['db_creds'])){
-					foreach($array['db_creds'] as $query){
-						if(!is_string($query)){
-							throw new Exception('Database credentials not properly defined. Database credentials must be made up of a one-dimensional array of strings.');
+					foreach($array['db_creds'] as $cred){
+						if(!is_string($cred)){
+							if(!is_array($cred) && key($cred) != 'columns'){
+								throw new Exception('Database credentials not properly defined. Database credentials must be made up of a one-dimensional array of strings.');
+							}
 						}
 					}
 					if(array_key_exists('username', $array['db_creds'])){
@@ -360,6 +362,22 @@ class InternalSearch {
 					}
 					else {
 						throw new Exception('Database credentials not properly defined. No type specified.');
+					}
+					if(array_key_exists('columns', $array['db_creds'])){
+						if(!is_array($array['db_creds']['columns'])){
+							throw new Exception('Database credentials not properly defined. Columns must be an array.');
+						}
+					}
+					else {
+						throw new Exception('Database credentials not properly defined. No columns specified.');
+					}
+					if(array_key_exists('table', $array['db_creds'])){
+						if(!is_string($array['db_creds']['table'])){
+							throw new Exception('Database credentials not properly defined. Table must be a string.');
+						}
+					}
+					else {
+						throw new Exception('Database credentials not properly defined. No table specified.');
 					}
 					if(array_key_exists('database', $array['db_creds'])){
 						if(!is_string($array['db_creds']['database'])){
@@ -392,6 +410,21 @@ class InternalSearch {
 		$path = str_replace('/', DIRECTORY_SEPARATOR, $path);
 		$path = str_replace('\\', DIRECTORY_SEPARATOR, $path);
 		return $path;
+	}
+	
+	public static function index($config_path){
+		$config = self::parse_config($config_path);
+		if(array_key_exists('blacklist', $config)){
+			$paths = self::scan_directory($config['root_dir'], $config['blacklist']);
+		}
+		if(array_key_exists('whitelist', $config) && !is_null($config['whitelist'])){
+			$content = self::scrape_files($config['whitelist'], $config['queries']);
+		}
+		else {
+			$content = self::scrape_files($paths, $config['queries']);
+		}
+		$message = self::load_content($content, $config['db_creds']);
+		return $message;
 	}
 }
 ?>
