@@ -187,47 +187,40 @@ class InternalSearch {
 	
 	// this function takes in an array of arrays of content so that it can create the right SQL statement for insertion
 	// it generates the prepared statements syntax necessary for this job in the format: '(?, ?, ...),(?, ?, ...), ...'
-	public static function prepare_sql(array $content_arrays) { 
-		// check lengths of arrays to be sure
-		self::check_lengths($content_arrays);
-		
-		$number_of_columns = 0;
-		$number_of_rows = 0;
-		
-		foreach ($content_arrays as $content) {
-			$number_of_columns++;
-			foreach ($content as $damn) {
-				$number_of_rows++;
-			}
+	public static function prepare_sql(array $array_of_rows){
+		// make sure that the input arrays all have the same lengths
+		if(!self::check_lengths($array_of_rows)){
+			throw new Exception('Input arrays do not have the same lengths');
 		}
-		
-		$number_of_rows = $number_of_rows/$number_of_columns;
-		
-		$number_of_rows_temp = $number_of_rows;
-		
-		$sql = array();
-		
-		while ($number_of_rows_temp > 0) { // 5
-			// creates a group in this format: (?, ?, ... )
-			$number_of_columns_temp = $number_of_columns;
-			$columns_array = array();
-			$cluster = '(';
-			while ($number_of_columns_temp > 0) { // 2
-				$columns_array[] = '?';
-				$number_of_columns_temp--;
+		// declare the array that will hold the groups (each in the format: (?, ?, ...))
+		$groups = array();
+		foreach($array_of_rows as $row){
+			$group = '(';
+			// verify that the row is indeed an array, otherwise throw an exception
+			if (is_array($row)){
+				// declare array that will hold a '?' for each column
+				$columns = array();
+				foreach($row as $column){
+					// verify that the column is not an array, otherwise throw an exception
+					if(is_string($column)){
+						// add a '?' to the columns array for each column it finds in the row
+						$columns[] = '?';
+					} else {
+						throw new Exception('Input array must be a two dimensional array, no more.');
+					}
+				}
+			} else {
+				throw new Exception('Input array must be a two dimensional array, no less.');
 			}
-			$cluster .= implode(',', $columns_array);
-			$cluster .= ')';
-			
-			// adds the group to the list of groups
-			$sql[] = $cluster;
-			
-			$number_of_rows_temp--;
+			// implode the columns array into the current group
+			$group .= implode(',', $columns);
+			$group .= ')';
+			// add the current group to the array of groups
+			$groups[] = $group;
 		}
-		// consolidates all of the groups into one
-		$final_sql = implode(',', $sql);
-		
-		return $final_sql;
+		// implode the groups into one coherent SQL-compatible string
+		$sql = implode(',', $groups);
+		return $sql;
 	}
 	
 	// this function differs from the one in the above in that it is designed to prepare the actual text of the arrays
