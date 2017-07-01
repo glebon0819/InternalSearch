@@ -197,16 +197,16 @@ class InternalSearch {
 		foreach($array_of_rows as $row){
 			$group = '(';
 			// verify that the row is indeed an array, otherwise throw an exception
-			if (is_array($row)){
+			if (is_array($row) || is_object($row)){
 				// declare array that will hold a '?' for each column
 				$columns = array();
 				foreach($row as $column){
 					// verify that the column is not an array, otherwise throw an exception
-					if(is_string($column)){
+					if(!is_array($column) && !is_object($column)){
 						// add a '?' to the columns array for each column it finds in the row
 						$columns[] = '?';
 					} else {
-						throw new Exception('Input array must be a two dimensional array, no more.');
+						throw new Exception('Input array must be a two dimensional array, no more. Values cannot be arrays or objects.');
 					}
 				}
 			} else {
@@ -225,26 +225,34 @@ class InternalSearch {
 	
 	// this function differs from the one in the above in that it is designed to prepare the actual text of the arrays
 	// for loading, rather than the SQL statement
-	public static function prepare_data(array $arrays) {
-		self::check_lengths($arrays);
-		
-		$number_of_columns = 0;
-		$number_of_rows = 0;
-		
-		$final_data = array();
-		
-		$number_of_rows = count($arrays[0]);
-		
-		$rows = 0;
-		
-		while ($rows <= ($number_of_rows - 1)) {
-			foreach ($arrays as $array) {
-				$final_data[] = $array[$rows];
-			}
-			$rows++;
+	public static function prepare_data(array $array_of_arrays) {
+		// make sure that the input arrays all have the same lengths
+		if(!self::check_lengths($array_of_arrays)){
+			throw new Exception('Input arrays do not have the same lengths');
 		}
-		
-		return $final_data;
+		// declare the array that will hold the groups (each in the format: x,x,x,...)
+		$groups = array();
+		foreach($array_of_arrays as $row){
+			// verify that the row is indeed an array, otherwise throw an exception
+			if (is_array($row) || is_object($row)){
+				// declare array that will hold the value for each column
+				$columns = array();
+				foreach($row as $column){
+					// verify that the column is not an array, otherwise throw an exception
+					if(!is_array($column) && !is_object($column)){
+						// add cloumn's value to the columns array
+						$columns[] = $column;
+					} else {
+						throw new Exception('Input array must be a two dimensional array, no more.');
+					}
+				}
+			} else {
+				throw new Exception('Input array must be a two dimensional array, no less.');
+			}
+			// add the current column to the array of groups
+			$groups = array_merge($groups, $columns);
+		}
+		return $groups;
 	}
 	
 }
