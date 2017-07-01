@@ -40,7 +40,6 @@ class InternalSearch {
 				}
 			} 
 		}
-		
 		return $paths_to_files;
 	}
 
@@ -268,6 +267,131 @@ class InternalSearch {
 		}
 		return $groups;
 	}
+	public static function parse_config($file_path){
+		$json = file_get_contents($file_path);
+		$json = str_replace('\\', '\\\\', $json);
+		$array = json_decode($json, true);
+		if(is_array($array)){
+			if(!array_key_exists('root_dir', $array) || !is_string($array['root_dir'])){
+				throw new Exception('Root directory not properly defined in configuration file at "' . $file_path . '".');
+			} else {
+				$array['root_dir'] = self::convert_separators($array['root_dir']);
+			}
+			// this variable stores whether a blacklist array has been specified
+			$blacklist = false;
+			// allow blacklist to not exist because the implementor may not want a blacklist
+			if(array_key_exists('blacklist', $array)){
+				// make sure that blacklist is, in fact, an array
+				if(is_array($array['blacklist'])){
+					$blacklist = true;
+					foreach($array['blacklist'] as &$element){
+						// make sure that each element within the blacklist is a string
+						if(!is_string($element)){
+							throw new Exception('Blacklist not properly defined in configuration file at "' . $file_path . '". Blacklist must be a one-dimensional array of strings or NULL.');
+						}
+						$element = self::convert_separators($element);
+					}
+				} 
+				elseif(is_null($array['blacklist'])){}
+				else {
+					throw new Exception('Blacklist not properly defined in configuration file at "' . $file_path . '". Blacklist must be a one-dimensional array of strings or NULL.');
+				}
+			}
+			// allow whitelist to not exist because the implementor may not want a whitelist
+			if(array_key_exists('whitelist', $array)){
+				if(is_array($array['whitelist'])){
+					// if blacklist is already defined, throw exception
+					if($blacklist){
+						throw new Exception('Both a blacklist and a whitelist cannot be defined.');
+					}
+					foreach($array['whitelist'] as &$element){
+						// make sure that each element within the blacklist is a string
+						if(!is_string($element)){
+							throw new Exception('Whitelist not properly defined in configuration file at "' . $file_path . '". Whitelist must be a one-dimensional array of strings or NULL.');
+						}
+						$element = self::convert_separators($element);
+					}
+				}
+				// allow whitelist to be NULL
+				elseif(is_null($array['whitelist'])){}
+				else {
+					throw new Exception('Whitelist not properly defined in configuration file at "' . $file_path . '". Whitelist must be a one-dimensional array of strings or NULL.');
+				}
+			}
+			if(array_key_exists('queries', $array)){
+				if(is_array($array['queries'])){
+					foreach($array['queries'] as $query){
+						if(!is_string($query)){
+							throw new Exception('Queries not properly defined. Queries must be a one-dimensional array of strings.');
+						}
+					}
+				} 
+				else {
+					throw new Exception('Queries not properly defined. Queries must be a one-dimensional array of strings.');
+				}
+			}
+			if(array_key_exists('db_creds', $array)){
+				if(is_array($array['db_creds'])){
+					foreach($array['db_creds'] as $query){
+						if(!is_string($query)){
+							throw new Exception('Database credentials not properly defined. Database credentials must be made up of a one-dimensional array of strings.');
+						}
+					}
+					if(array_key_exists('username', $array['db_creds'])){
+						if(!is_string($array['db_creds']['username'])){
+							throw new Exception('Database credentials not properly defined. Username must be a string.');
+						}
+					}
+					else {
+						throw new Exception('Database credentials not properly defined. No username specified.');
+					}
+					if(array_key_exists('password', $array['db_creds'])){
+						if(!is_string($array['db_creds']['password'])){
+							throw new Exception('Database credentials not properly defined. Password must be a string.');
+						}
+					}
+					else {
+						throw new Exception('Database credentials not properly defined. No password specified.');
+					}
+					if(array_key_exists('type', $array['db_creds'])){
+						if(!is_string($array['db_creds']['type'])){
+							throw new Exception('Database credentials not properly defined. Type must be a string.');
+						}
+					}
+					else {
+						throw new Exception('Database credentials not properly defined. No type specified.');
+					}
+					if(array_key_exists('database', $array['db_creds'])){
+						if(!is_string($array['db_creds']['database'])){
+							throw new Exception('Database credentials not properly defined. Database must be a string.');
+						}
+					}
+					else {
+						throw new Exception('Database credentials not properly defined. No database specified.');
+					}
+					if(array_key_exists('host', $array['db_creds'])){
+						if(!is_string($array['db_creds']['host'])){
+							throw new Exception('Database credentials not properly defined. Host must be a string.');
+						}
+					}
+					else {
+						throw new Exception('Database credentials not properly defined. No host specified.');
+					}
+				} 
+				else {
+					throw new Exception('Database credentials not properly defined. Database credentials must be made up of a one-dimensional array of strings.');
+				}
+			}
+		} else {
+			throw new Exception('Configuration file at "' . $file_path . '" could not be parsed. Check your syntax.');
+		}
+		return $array;
+	}
 	
+	public static function convert_separators($path){
+		$path = str_replace('/', DIRECTORY_SEPARATOR, $path);
+		$path = str_replace('\\', DIRECTORY_SEPARATOR, $path);
+		return $path;
+	}
 }
 ?>
