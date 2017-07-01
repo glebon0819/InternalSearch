@@ -40,68 +40,50 @@ class InternalSearch {
 				}
 			} 
 		}
+		
 		return $paths_to_files;
 	}
 
 	public static function scrape_files($list, array $queries) {
-	
 		$content_array = array();
 		$used_paths_array = array();
-		
 		$result = array();
-		
 		foreach ($list as $file) {
-			
 			$handle = fopen($file, 'r');
 			$html = fread($handle, filesize($file));
-			
 			// we get ready to parse the HTML and disregard any markup syntactical errors
 			$dom = new DOMDocument();
 			libxml_use_internal_errors(true);
 			$dom->loadHTML($html);
 			libxml_clear_errors();
-			
 			$xpath = new DOMXPath($dom);
-			
 			$final_array = array();
-			
 			foreach($queries as $query){
-				
 				$content_array = array();
 				$contents = array();
-				
 				// scrapes the contents of the description area in each file
 				$nodes = $xpath->query($query);
-				
 				// creates an array of the resulting descriptions (there should only be one)
 				foreach ($nodes as $i => $node) {
 					$contents[] = $node->nodeValue;
 				}
-				
 				if (empty($contents)){
 					$contents[] = NULL;
 				}
-				
 				$contents = implode(' | ', $contents);
-				
 				if(strlen($contents) == 0){
 					$contents = NULL;
 				}
-				
 				$final_array[] = $contents;
 			}
-			
 			// adds the file's path to the array of file paths that actually produced content; this is done to
 			// prevent any mismatch later between the length of the array containing the paths to the files and
 			// the length of the array containing the actual content.
-			
 			if  (!self::check_if_all_null($final_array)) {
 				array_unshift($final_array, $file);
 				$result[] = $final_array;
 			}
-			
 		} 
-		
 		// return array($used_paths_array, $content_array);
 		return $result;
 	}
@@ -109,7 +91,6 @@ class InternalSearch {
 	public static function check_if_all_null(array $array_of_arrays){
 		// return true unless told otherwise
 		$result = true;
-		
 		// foreach element in the array, check if it's an array. If so, call the function recursively. If not, check if its value is null
 		foreach($array_of_arrays as $element){
 			if($result){
@@ -156,7 +137,7 @@ class InternalSearch {
 		try {
 			// push data into DB
 			$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-			$sql = 'INSERT INTO ' . $credentials['table'] . '(' . implode(',', $credentials['columns']) . ') VALUES ' . $final_sql;
+			$sql = 'TRUNCATE TABLE ' . $credentials['table'] . '; INSERT INTO ' . $credentials['table'] . '(' . implode(',', $credentials['columns']) . ') VALUES ' . $final_sql;
 			$q = $pdo->prepare($sql);
 			$q->execute($final_data);
 		} catch(PDOException $e) {
@@ -164,11 +145,8 @@ class InternalSearch {
 			$pdo = NULL;
 			return $message . 'Database failed to load data.' . $e->getMessage();
 		}
-		
 		$pdo = NULL;
-		
 		$message = 'Success! Database submitted successfully!';
-		
 		return $message;
 	}
 	
@@ -176,9 +154,8 @@ class InternalSearch {
 	public static function check_lengths(array $array_of_arrays) {
 		$num_of_arrays = count($array_of_arrays); // 3
 		$array_of_counts = array();
-		
 		foreach($array_of_arrays as $array) {
-			$array_of_counts[] = count($array); // array( 1 , 1 , 1 )
+			$array_of_counts[] = count($array);
 		}
 		$index = 0;
 		while ($index <= ($num_of_arrays - 1)) {
@@ -194,7 +171,6 @@ class InternalSearch {
 			}
 			$index++;
 		}
-		
 		return true;
 	}
 	
@@ -210,16 +186,16 @@ class InternalSearch {
 		foreach($array_of_rows as $row){
 			$group = '(';
 			// verify that the row is indeed an array, otherwise throw an exception
-			if (is_array($row) || is_object($row)){
+			if (is_array($row)){
 				// declare array that will hold a '?' for each column
 				$columns = array();
 				foreach($row as $column){
 					// verify that the column is not an array, otherwise throw an exception
-					if(!is_array($column) && !is_object($column)){
+					if(is_string($column) || is_null($column)){
 						// add a '?' to the columns array for each column it finds in the row
 						$columns[] = '?';
 					} else {
-						throw new Exception('Input array must be a two dimensional array, no more. Values cannot be arrays or objects.');
+						throw new Exception('Input array must be a two dimensional array, no more.');
 					}
 				}
 			} else {
@@ -247,12 +223,12 @@ class InternalSearch {
 		$groups = array();
 		foreach($array_of_arrays as $row){
 			// verify that the row is indeed an array, otherwise throw an exception
-			if (is_array($row) || is_object($row)){
+			if (is_array($row)){
 				// declare array that will hold the value for each column
 				$columns = array();
 				foreach($row as $column){
 					// verify that the column is not an array, otherwise throw an exception
-					if(!is_array($column) && !is_object($column)){
+					if(is_string($column) || is_null($column)){
 						// add cloumn's value to the columns array
 						$columns[] = $column;
 					} else {
@@ -262,9 +238,13 @@ class InternalSearch {
 			} else {
 				throw new Exception('Input array must be a two dimensional array, no less.');
 			}
-			// add the current column to the array of groups
+			// implode the columns array into the current group
+			//$group = implode(',', $columns);
+			// add the current group to the array of groups
 			$groups = array_merge($groups, $columns);
 		}
+		// implode the groups into one coherent SQL-compatible string
+		//$sql = implode(',', $groups);
 		return $groups;
 	}
 	public static function parse_config($file_path){
