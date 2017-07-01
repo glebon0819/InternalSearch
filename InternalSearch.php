@@ -132,8 +132,7 @@ class InternalSearch {
 		}
 		
 		try {
-			// tries to connect to DB using Database class that was included earlier
-			// $pdo = Database::connect();
+			// tries to connect to DB using credentials array
 			$pdo = new PDO($credentials['type'] . ':host=' . $credentials['host'] . ';dbname=' . $credentials['database'], $credentials['username'], $credentials['password']);
 		
 		} catch(PDOException $d) {
@@ -148,8 +147,8 @@ class InternalSearch {
 			$q = $pdo->prepare($sql);
 			$q->execute($final_data);
 		} catch(PDOException $e) {
-			// Database::disconnect();
-			$connection = NULL;
+			// disconnect from the database
+			$pdo = NULL;
 			return $message . 'Database failed to load data.' . $e->getMessage();
 		}
 		
@@ -176,8 +175,7 @@ class InternalSearch {
 			else {
 				$current = $array_of_counts[$index];
 				if ($last != $current) {
-					throw new Exception('Array inputs do not have the same lengths.');
-					//return false;
+					return false;
 				}
 				$last = $current;
 			}
@@ -189,7 +187,7 @@ class InternalSearch {
 	
 	// this function takes in an array of arrays of content so that it can create the right SQL statement for insertion
 	// it generates the prepared statements syntax necessary for this job in the format: '(?, ?, ...),(?, ?, ...), ...'
-	public static function prepare_sql(array $content_arrays) { // array($content, $paths) -- 2 items
+	public static function prepare_sql(array $content_arrays) { 
 		// check lengths of arrays to be sure
 		self::check_lengths($content_arrays);
 		
